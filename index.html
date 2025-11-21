@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Play Sudoku like a Pro</title>
+    <title>Play Sudoku Like a Pro</title>
     <style>
         :root {
             --bg-color: #f4f7f6;
@@ -21,11 +21,11 @@
             --user-num-color: #2b6cb0;
             --candidate-color: #718096;
             
-            /* 难度颜色 */
-            --easy-color: #48bb78;
-            --medium-color: #4299e1;
-            --hard-color: #ed8936;
-            --expert-color: #f56565;
+            /* 难度颜色 - 对应表情的情绪颜色 */
+            --easy-color: #48bb78;   /* 开心绿 */
+            --medium-color: #4299e1; /* 平静蓝 */
+            --hard-color: #ed8936;   /* 困惑橙 */
+            --expert-color: #f56565; /* 抓狂红 */
         }
 
         body {
@@ -50,7 +50,7 @@
             color: #4a5568;
         }
 
-        /* --- 顶部控制区 (只保留难度) --- */
+        /* --- 顶部控制区 --- */
         .top-bar {
             display: flex;
             flex-direction: column;
@@ -83,10 +83,13 @@
 
         .diff-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         .diff-btn:active { transform: scale(0.98); }
-        .diff-icon { width: 24px; height: 24px; margin-bottom: 4px; }
+        
+        .diff-icon { width: 28px; height: 28px; margin-bottom: 4px; }
         .diff-text { font-size: 12px; font-weight: 600; color: #718096; }
+        
         .diff-btn.active { border-color: var(--primary-color); background-color: #ebf8ff; }
         
+        /* 不同的难度使用不同的填充色 */
         .diff-btn:nth-child(1) .diff-icon { fill: var(--easy-color); }
         .diff-btn:nth-child(2) .diff-icon { fill: var(--medium-color); }
         .diff-btn:nth-child(3) .diff-icon { fill: var(--hard-color); }
@@ -160,8 +163,7 @@
         .right-panel {
             display: flex;
             flex-direction: column;
-            gap: 20px; /* 键盘和设置之间的间距 */
-            /* 宽度由内部元素决定，通常与键盘一致 */
+            gap: 20px;
         }
 
         .numpad {
@@ -217,7 +219,7 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            width: 100%; /* 填满 right-panel */
+            width: 100%;
             box-sizing: border-box;
         }
 
@@ -230,7 +232,7 @@
             font-weight: 500;
         }
 
-        /* Toggle Switch 样式 */
+        /* Toggle Switch */
         .switch {
             position: relative;
             display: inline-block;
@@ -260,7 +262,6 @@
         }
         input:checked + .slider { background-color: var(--primary-color); }
         input:checked + .slider:before { transform: translateX(20px); }
-
 
         @keyframes popIn {
             from { transform: scale(0); opacity: 0; }
@@ -310,19 +311,36 @@
     <div class="top-bar">
         <div class="difficulty-selector">
             <button class="diff-btn" onclick="initGame(30, this)">
-                <svg class="diff-icon" viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M7,13A1,1 0 0,0 6,12A1,1 0 0,0 7,11A1,1 0 0,0 8,12A1,1 0 0,0 7,13M17,13A1,1 0 0,0 16,12A1,1 0 0,0 17,11A1,1 0 0,0 18,12A1,1 0 0,0 17,13M12,14C9.33,14 7,15.33 7,17V18H17V17C17,15.33 14.67,14 12,14Z" /></svg>
+                <svg class="diff-icon" viewBox="0 0 24 24">
+                    <path d="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M12,20c-4.41,0-8-3.59-8-8s3.59-8,8-8s8,3.59,8,8S16.41,20,12,20z"/>
+                    <path d="M8.5,9.5c0,0.83,0.67,1.5,1.5,1.5S11.5,10.33,11.5,9.5S10.83,8,10,8S8.5,8.67,8.5,9.5z M14,9.5c0,0.83,0.67,1.5,1.5,1.5S17,10.33,17,9.5S16.33,8,15.5,8S14,8.67,14,9.5z M12,17.5c2.33,0,4.31-1.46,5.11-3.5H6.89C7.69,16.04,9.67,17.5,12,17.5z"/>
+                </svg>
                 <span class="diff-text">简单</span>
             </button>
+
             <button class="diff-btn" onclick="initGame(40, this)">
-                <svg class="diff-icon" viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A1,1 0 0,0 11,7A1,1 0 0,0 12,8A1,1 0 0,0 13,7A1,1 0 0,0 12,6M7,13A1,1 0 0,0 6,12A1,1 0 0,0 7,11A1,1 0 0,0 8,12A1,1 0 0,0 7,13M17,13A1,1 0 0,0 16,12A1,1 0 0,0 17,11A1,1 0 0,0 18,12A1,1 0 0,0 17,13M12,14C9.33,14 7,15.33 7,17V18H17V17C17,15.33 14.67,14 12,14Z" /></svg>
+                <svg class="diff-icon" viewBox="0 0 24 24">
+                    <path d="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M12,20c-4.41,0-8-3.59-8-8s3.59-8,8-8s8,3.59,8,8S16.41,20,12,20z"/>
+                    <path d="M8.5,9.5c0,0.83,0.67,1.5,1.5,1.5S11.5,10.33,11.5,9.5S10.83,8,10,8S8.5,8.67,8.5,9.5z M14,9.5c0,0.83,0.67,1.5,1.5,1.5S17,10.33,17,9.5S16.33,8,15.5,8S14,8.67,14,9.5z M8,14.5h8v1.5H8V14.5z"/>
+                </svg>
                 <span class="diff-text">中等</span>
             </button>
+
             <button class="diff-btn" onclick="initGame(50, this)">
-                <svg class="diff-icon" viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12.5,7H11.5V11L9,12.5L9.5,13.3L12.5,11.5V7M7,13A1,1 0 0,0 6,12A1,1 0 0,0 7,11A1,1 0 0,0 8,12A1,1 0 0,0 7,13M17,13A1,1 0 0,0 16,12A1,1 0 0,0 17,11A1,1 0 0,0 18,12A1,1 0 0,0 17,13M12,14C9.33,14 7,15.33 7,17V18H17V17C17,15.33 14.67,14 12,14Z" /></svg>
+                <svg class="diff-icon" viewBox="0 0 24 24">
+                    <path d="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M12,20c-4.41,0-8-3.59-8-8s3.59-8,8-8s8,3.59,8,8S16.41,20,12,20z"/>
+                    <path d="M8.5,9.5c0,0.83,0.67,1.5,1.5,1.5S11.5,10.33,11.5,9.5S10.83,8,10,8S8.5,8.67,8.5,9.5z M14,9.5c0,0.83,0.67,1.5,1.5,1.5S17,10.33,17,9.5S16.33,8,15.5,8S14,8.67,14,9.5z M12,13.5c-2.33,0-4.31,1.46-5.11,3.5h10.22C16.31,14.96,14.33,13.5,12,13.5z"/>
+                </svg>
                 <span class="diff-text">困难</span>
             </button>
+
             <button class="diff-btn" onclick="initGame(60, this)">
-                <svg class="diff-icon" viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M12 4C16.4 4 20 7.6 20 12S16.4 20 12 20 4 16.4 4 12 7.6 4 12 4M11 7V13L16.2 16.2L17 14.9L12.5 12.2V7H11M7 13C6.4 13 6 12.6 6 12S6.4 11 7 11 8 11.4 8 12 7.6 13 7 13M17 13C16.4 13 16 12.6 16 12S16.4 11 17 11 18 11.4 18 12 17.6 13 17 13Z" /></svg>
+                <svg class="diff-icon" viewBox="0 0 24 24">
+                    <path d="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M12,20c-4.41,0-8-3.59-8-8s3.59-8,8-8s8,3.59,8,8S16.41,20,12,20z"/>
+                    <polygon points="7.5,9 10.5,11 7.5,13 7.5,11.5 9,11 7.5,10.5"/>
+                    <polygon points="16.5,9 13.5,11 16.5,13 16.5,11.5 15,11 16.5,10.5"/>
+                    <path d="M8,15 l2,2 l2,-2 l2,2 l2,-2 v1.5 l-2,2 l-2,-2 l-2,2 l-2,-2 Z"/>
+                </svg>
                 <span class="diff-text">专家</span>
             </button>
         </div>
@@ -356,7 +374,7 @@
                         <span class="slider"></span>
                     </label>
                 </label>
-                </div>
+            </div>
         </div>
     </div>
 
@@ -607,9 +625,6 @@
                 return;
             }
             
-            // 用户修改逻辑：即使数字满了，如果是为了修正错误，或者当前格子已经是这个数字（重复点击），不强行拦截
-            // 这里我们主要依赖视觉上的禁用状态
-
             const oldValue = boardArray[selectedIndex];
             if (oldValue === num) return;
 
