@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>本地离线数独 - 专业版</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --board-bg: #ffffff;
+            --line-color: #34495e;
+            --light-line: #e2e8f0;
+            --highlight-color: #eef2f7;
+            --same-num-color: #e3f2fd;
+            --selected-color: #4299e1;
+            --text-color: #2d3748;
+            --primary-color: #3182ce;
+            --error-color: #e53e3e;
+            --error-bg-color: #fff5f5;
+            --fixed-num-color: #1a202c;
+            --user-num-color: #2b6cb0;
+            --candidate-color: #718096;
+            
+            /* 难度颜色 */
+            --easy-color: #48bb78;
+            --medium-color: #4299e1;
+            --hard-color: #ed8936;
+            --expert-color: #f56565;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            color: var(--text-color);
+            touch-action: manipulation; 
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        h1 { 
+            margin: 0 0 20px 0; 
+            font-weight: 300;
+            letter-spacing: 2px;
+            color: #4a5568;
+        }
+
+        /* --- 顶部控制区 (只保留难度) --- */
+        .top-bar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 25px;
+        }
+
+        .difficulty-selector {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            width: 100%;
+        }
+
+        .diff-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 5px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .diff-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .diff-btn:active { transform: scale(0.98); }
+        .diff-icon { width: 24px; height: 24px; margin-bottom: 4px; }
+        .diff-text { font-size: 12px; font-weight: 600; color: #718096; }
+        .diff-btn.active { border-color: var(--primary-color); background-color: #ebf8ff; }
+        
+        .diff-btn:nth-child(1) .diff-icon { fill: var(--easy-color); }
+        .diff-btn:nth-child(2) .diff-icon { fill: var(--medium-color); }
+        .diff-btn:nth-child(3) .diff-icon { fill: var(--hard-color); }
+        .diff-btn:nth-child(4) .diff-icon { fill: var(--expert-color); }
+
+        /* --- 游戏主容器 --- */
+        .game-container {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        /* 数独盘 */
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(9, 46px);
+            grid-template-rows: repeat(9, 46px);
+            background-color: var(--line-color);
+            gap: 1px;
+            border: 2px solid var(--line-color);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .cell {
+            background-color: var(--board-bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 22px;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            transition: background-color 0.05s;
+        }
+
+        .cell.border-bottom { border-bottom: 2px solid var(--line-color); }
+        .cell.border-right { border-right: 2px solid var(--line-color); }
+
+        /* 候选数 */
+        .candidates-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .candidate-num {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 9px;
+            color: var(--candidate-color);
+            line-height: 1;
+        }
+
+        /* 单元格状态 */
+        .cell.highlight { background-color: var(--highlight-color); }
+        .cell.same-number { background-color: var(--same-num-color); }
+        .cell.selected { background-color: var(--selected-color); color: white; }
+        .cell.selected .candidate-num { color: rgba(255,255,255, 0.9); }
+        .cell.fixed { font-weight: 700; color: var(--fixed-num-color); }
+        .cell.user-input { color: var(--user-num-color); font-weight: 600; }
+        .cell.selected.fixed, .cell.selected.user-input { color: white; }
+        .cell.error { background-color: var(--error-bg-color) !important; color: var(--error-color) !important; }
+
+        /* --- 右侧面板 (键盘 + 设置) --- */
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px; /* 键盘和设置之间的间距 */
+            /* 宽度由内部元素决定，通常与键盘一致 */
+        }
+
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 64px);
+            grid-template-rows: repeat(4, 64px);
+            gap: 10px;
+        }
+        
+        .num-btn {
+            padding: 0;
+            font-size: 26px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 600;
+            color: var(--text-color);
+            box-shadow: 0 4px 0 #cbd5e0;
+            transition: all 0.1s;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .num-btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 0 0 #cbd5e0; }
+        .num-btn.clear, .num-btn.undo { background-color: #edf2f7; font-size: 16px; color: #4a5568; font-weight: normal; }
+        .num-btn.clear { grid-column: span 2; }
+        
+        .num-btn:disabled.completed {
+            background-color: transparent;
+            border-color: transparent;
+            box-shadow: none;
+            cursor: default;
+            transform: none;
+        }
+        
+        .completed-svg {
+            width: 32px;
+            height: 32px;
+            fill: #48bb78;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* --- 设置面板 --- */
+        .settings-panel {
+            background-color: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%; /* 填满 right-panel */
+            box-sizing: border-box;
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            color: #4a5568;
+            font-weight: 500;
+        }
+
+        /* Toggle Switch 样式 */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #cbd5e0;
+            transition: .3s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        input:checked + .slider { background-color: var(--primary-color); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+
+        @keyframes popIn {
+            from { transform: scale(0); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .status {
+            height: 24px;
+            font-size: 15px;
+            color: var(--primary-color);
+            font-weight: 600;
+            text-align: center;
+        }
+
+        /* --- 响应式 --- */
+        @media (max-width: 850px) {
+            .game-container { flex-direction: column; align-items: center; gap: 20px; }
+            .game-board {
+                grid-template-columns: repeat(9, 10vw);
+                grid-template-rows: repeat(9, 10vw);
+            }
+            .cell { font-size: 18px; }
+            .candidate-num { font-size: 8px; }
+            
+            .right-panel { width: 90vw; max-width: 400px; }
+            .numpad {
+                grid-template-columns: repeat(5, 1fr);
+                grid-template-rows: 50px 50px;
+                width: 100%;
+                gap: 8px;
+            }
+            .num-btn { font-size: 20px; border-radius: 8px; }
+            .num-btn.clear { grid-column: span 2; }
+            .num-btn.undo { grid-column: span 1; }
+            .completed-svg { width: 24px; height: 24px; }
+            
+            .top-bar { width: 90%; }
+            .diff-text { display: none; }
+            .difficulty-selector { gap: 5px; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>SUDOKU</h1>
+
+    <div class="top-bar">
+        <div class="difficulty-selector">
+            <button class="diff-btn" onclick="initGame(30, this)">
+                <svg class="diff-icon" viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M7,13A1,1 0 0,0 6,12A1,1 0 0,0 7,11A1,1 0 0,0 8,12A1,1 0 0,0 7,13M17,13A1,1 0 0,0 16,12A1,1 0 0,0 17,11A1,1 0 0,0 18,12A1,1 0 0,0 17,13M12,14C9.33,14 7,15.33 7,17V18H17V17C17,15.33 14.67,14 12,14Z" /></svg>
+                <span class="diff-text">简单</span>
+            </button>
+            <button class="diff-btn" onclick="initGame(40, this)">
+                <svg class="diff-icon" viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A1,1 0 0,0 11,7A1,1 0 0,0 12,8A1,1 0 0,0 13,7A1,1 0 0,0 12,6M7,13A1,1 0 0,0 6,12A1,1 0 0,0 7,11A1,1 0 0,0 8,12A1,1 0 0,0 7,13M17,13A1,1 0 0,0 16,12A1,1 0 0,0 17,11A1,1 0 0,0 18,12A1,1 0 0,0 17,13M12,14C9.33,14 7,15.33 7,17V18H17V17C17,15.33 14.67,14 12,14Z" /></svg>
+                <span class="diff-text">中等</span>
+            </button>
+            <button class="diff-btn" onclick="initGame(50, this)">
+                <svg class="diff-icon" viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12.5,7H11.5V11L9,12.5L9.5,13.3L12.5,11.5V7M7,13A1,1 0 0,0 6,12A1,1 0 0,0 7,11A1,1 0 0,0 8,12A1,1 0 0,0 7,13M17,13A1,1 0 0,0 16,12A1,1 0 0,0 17,11A1,1 0 0,0 18,12A1,1 0 0,0 17,13M12,14C9.33,14 7,15.33 7,17V18H17V17C17,15.33 14.67,14 12,14Z" /></svg>
+                <span class="diff-text">困难</span>
+            </button>
+            <button class="diff-btn" onclick="initGame(60, this)">
+                <svg class="diff-icon" viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M12 4C16.4 4 20 7.6 20 12S16.4 20 12 20 4 16.4 4 12 7.6 4 12 4M11 7V13L16.2 16.2L17 14.9L12.5 12.2V7H11M7 13C6.4 13 6 12.6 6 12S6.4 11 7 11 8 11.4 8 12 7.6 13 7 13M17 13C16.4 13 16 12.6 16 12S16.4 11 17 11 18 11.4 18 12 17.6 13 17 13Z" /></svg>
+                <span class="diff-text">专家</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <div class="left-panel">
+            <div id="board" class="game-board"></div>
+        </div>
+        
+        <div class="right-panel">
+            <div class="numpad">
+                <button id="btn-1" class="num-btn" onclick="fillNumber(1)">1</button>
+                <button id="btn-2" class="num-btn" onclick="fillNumber(2)">2</button>
+                <button id="btn-3" class="num-btn" onclick="fillNumber(3)">3</button>
+                <button id="btn-4" class="num-btn" onclick="fillNumber(4)">4</button>
+                <button id="btn-5" class="num-btn" onclick="fillNumber(5)">5</button>
+                <button id="btn-6" class="num-btn" onclick="fillNumber(6)">6</button>
+                <button id="btn-7" class="num-btn" onclick="fillNumber(7)">7</button>
+                <button id="btn-8" class="num-btn" onclick="fillNumber(8)">8</button>
+                <button id="btn-9" class="num-btn" onclick="fillNumber(9)">9</button>
+                <button class="num-btn clear" onclick="fillNumber(0)">清除</button>
+                <button class="num-btn undo" onclick="undoLastMove()">撤销</button>
+            </div>
+
+            <div class="settings-panel">
+                <label class="setting-row">
+                    <span>显示候选数</span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggleCandidates" onchange="renderBoard()">
+                        <span class="slider"></span>
+                    </label>
+                </label>
+                </div>
+        </div>
+    </div>
+
+    <div class="status" id="status-msg"></div>
+
+    <script>
+        let boardArray = [];
+        let solutionArray = [];
+        let fixedCells = [];
+        let selectedIndex = -1;
+        let history = [];
+        const MAX_HISTORY = 50;
+        const checkmarkSVG = `<svg class="completed-svg" viewBox="0 0 24 24"><path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>`;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            createBoardDOM();
+            const firstBtn = document.querySelector('.diff-btn');
+            initGame(30, firstBtn);
+            document.addEventListener('keydown', handleKeyPress);
+        });
+
+        function createBoardDOM() {
+            const boardDiv = document.getElementById('board');
+            boardDiv.innerHTML = '';
+            for (let i = 0; i < 81; i++) {
+                let cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.dataset.index = i;
+                const row = Math.floor(i / 9);
+                const col = i % 9;
+                if (col === 2 || col === 5) cell.classList.add('border-right');
+                if (row === 2 || row === 5) cell.classList.add('border-bottom');
+                cell.addEventListener('click', () => selectCell(i));
+                boardDiv.appendChild(cell);
+            }
+        }
+
+        function initGame(difficulty, btnElement) {
+            document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+            if(btnElement) btnElement.classList.add('active');
+
+            clearStatus();
+            selectedIndex = -1;
+            boardArray = new Array(81).fill(0);
+            solutionArray = new Array(81).fill(0);
+            fixedCells = [];
+            history = [];
+
+            fillDiagonal();
+            solve(solutionArray);
+
+            boardArray = [...solutionArray];
+            removeDigits(difficulty);
+
+            renderBoard();
+        }
+
+        function fillDiagonal() {
+            for (let i = 0; i < 9; i = i + 3) fillBox(i, i);
+        }
+
+        function fillBox(row, col) {
+            let num;
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    do {
+                        num = Math.floor(Math.random() * 9) + 1;
+                    } while (!isSafeBox(row, col, num));
+                    solutionArray[(row + i) * 9 + (col + j)] = num;
+                }
+            }
+        }
+
+        function isSafeBox(rowStart, colStart, num) {
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    if (solutionArray[(rowStart + i) * 9 + (colStart + j)] === num) return false;
+                }
+            }
+            return true;
+        }
+
+        function isSafe(board, row, col, num) {
+            for (let x = 0; x < 9; x++) if (board[row * 9 + x] === num) return false;
+            for (let x = 0; x < 9; x++) if (board[x * 9 + col] === num) return false;
+            let startRow = row - row % 3, startCol = col - col % 3;
+            for (let i = 0; i < 3; i++)
+                for (let j = 0; j < 3; j++)
+                    if (board[(startRow + i) * 9 + (startCol + j)] === num) return false;
+            return true;
+        }
+
+        function solve(board) {
+            for (let i = 0; i < 81; i++) {
+                if (board[i] === 0) {
+                    for (let num = 1; num <= 9; num++) {
+                        const row = Math.floor(i / 9);
+                        const col = i % 9;
+                        if (isSafe(board, row, col, num)) {
+                            board[i] = num;
+                            if (solve(board)) return true;
+                            board[i] = 0;
+                        }
+                    }
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function removeDigits(count) {
+            let attempts = count;
+            let cellIndices = Array.from({length: 81}, (_, i) => i);
+            shuffleArray(cellIndices);
+            for (let i = 0; i < cellIndices.length && attempts > 0; i++) {
+                let idx = cellIndices[i];
+                if (boardArray[idx] !== 0) {
+                    boardArray[idx] = 0;
+                    attempts--;
+                }
+            }
+            for (let i = 0; i < 81; i++) {
+                if (boardArray[i] !== 0) fixedCells.push(i);
+            }
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function renderBoard() {
+            const showCandidates = document.getElementById('toggleCandidates').checked;
+            const cells = document.querySelectorAll('.cell');
+            
+            cells.forEach((cell, i) => {
+                cell.className = 'cell'; 
+                const row = Math.floor(i / 9);
+                const col = i % 9;
+                if (col === 2 || col === 5) cell.classList.add('border-right');
+                if (row === 2 || row === 5) cell.classList.add('border-bottom');
+                cell.innerHTML = '';
+
+                if (boardArray[i] !== 0) {
+                    cell.textContent = boardArray[i];
+                    if (fixedCells.includes(i)) {
+                        cell.classList.add('fixed');
+                    } else {
+                        cell.classList.add('user-input');
+                        if (boardArray[i] !== solutionArray[i]) {
+                            cell.classList.add('error');
+                        }
+                    }
+                } else {
+                    if (showCandidates) {
+                        const candidatesGrid = document.createElement('div');
+                        candidatesGrid.className = 'candidates-grid';
+                        for (let num = 1; num <= 9; num++) {
+                            const candidateSpan = document.createElement('div');
+                            candidateSpan.className = 'candidate-num';
+                            if (isSafe(boardArray, row, col, num)) {
+                                candidateSpan.textContent = num;
+                            }
+                            candidatesGrid.appendChild(candidateSpan);
+                        }
+                        cell.appendChild(candidatesGrid);
+                    }
+                }
+            });
+            highlightCells();
+            updateNumpadState(); 
+        }
+
+        function updateNumpadState() {
+            const counts = Array(10).fill(0);
+            boardArray.forEach(num => counts[num]++);
+            for (let i = 1; i <= 9; i++) {
+                const btn = document.getElementById(`btn-${i}`);
+                if (!btn) continue;
+                if (counts[i] >= 9) {
+                    btn.classList.add('completed');
+                    btn.disabled = true;
+                    btn.innerHTML = checkmarkSVG;
+                } else {
+                    btn.classList.remove('completed');
+                    btn.disabled = false;
+                    btn.innerHTML = `${i}`;
+                }
+            }
+        }
+
+        function selectCell(index) {
+            selectedIndex = index;
+            renderBoard();
+        }
+
+        function highlightCells() {
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach(c => c.classList.remove('selected', 'highlight', 'same-number'));
+            if (selectedIndex === -1) return;
+
+            const selectedVal = boardArray[selectedIndex];
+            const currentRow = Math.floor(selectedIndex / 9);
+            const currentCol = selectedIndex % 9;
+
+            let rowsToHighlight = new Set([currentRow]);
+            let colsToHighlight = new Set([currentCol]);
+
+            if (selectedVal !== 0) {
+                boardArray.forEach((num, index) => {
+                    if (num === selectedVal) {
+                        rowsToHighlight.add(Math.floor(index / 9));
+                        colsToHighlight.add(index % 9);
+                    }
+                });
+            }
+
+            cells.forEach((c, i) => {
+                const r = Math.floor(i / 9);
+                const cIdx = i % 9;
+                if (rowsToHighlight.has(r) || colsToHighlight.has(cIdx)) c.classList.add('highlight');
+                if (selectedVal !== 0 && boardArray[i] === selectedVal) c.classList.add('same-number');
+                if (i === selectedIndex) c.classList.add('selected');
+            });
+        }
+
+        function handleKeyPress(e) {
+            if (selectedIndex === -1) return;
+            const row = Math.floor(selectedIndex / 9);
+            const col = selectedIndex % 9;
+            if (e.key === 'ArrowUp') { selectCell(row > 0 ? selectedIndex - 9 : selectedIndex); e.preventDefault(); }
+            else if (e.key === 'ArrowDown') { selectCell(row < 8 ? selectedIndex + 9 : selectedIndex); e.preventDefault(); }
+            else if (e.key === 'ArrowLeft') { selectCell(col > 0 ? selectedIndex - 1 : selectedIndex); e.preventDefault(); }
+            else if (e.key === 'ArrowRight') { selectCell(col < 8 ? selectedIndex + 1 : selectedIndex); e.preventDefault(); }
+            else if (e.key >= '1' && e.key <= '9') { fillNumber(parseInt(e.key)); }
+            else if (e.key === 'Backspace' || e.key === 'Delete') { fillNumber(0); }
+        }
+
+        function fillNumber(num) {
+            if (selectedIndex === -1) {
+                updateStatus("请先选择一个格子！");
+                return;
+            }
+            if (fixedCells.includes(selectedIndex)) {
+                updateStatus("不能修改题目预设的数字！");
+                return;
+            }
+            
+            // 用户修改逻辑：即使数字满了，如果是为了修正错误，或者当前格子已经是这个数字（重复点击），不强行拦截
+            // 这里我们主要依赖视觉上的禁用状态
+
+            const oldValue = boardArray[selectedIndex];
+            if (oldValue === num) return;
+
+            history.push({ index: selectedIndex, oldValue: oldValue, newValue: num });
+            if (history.length > MAX_HISTORY) history.shift();
+
+            boardArray[selectedIndex] = num;
+            renderBoard();
+            
+            if (num !== 0 && num !== solutionArray[selectedIndex]) {
+                 updateStatus("数字不正确！", true);
+            } else if (num !== 0) {
+                 document.getElementById('status-msg').textContent = "";
+            }
+            
+            if (!boardArray.includes(0) && checkWin()) {
+                updateStatus("🎉 恭喜你，解题成功！");
+            }
+        }
+
+        function undoLastMove() {
+            if (history.length === 0) {
+                updateStatus("没有可以撤销的操作了！");
+                return;
+            }
+            const lastMove = history.pop();
+            const { index, oldValue } = lastMove;
+            boardArray[index] = oldValue;
+            selectedIndex = index;
+            renderBoard();
+            updateStatus("已撤销上一步操作。");
+        }
+
+        function checkWin() {
+            for (let i = 0; i < 81; i++) {
+                if (boardArray[i] !== solutionArray[i]) return false;
+            }
+            return true;
+        }
+
+        function updateStatus(msg, isError = false) {
+            const el = document.getElementById('status-msg');
+            el.textContent = msg;
+            el.style.color = isError ? 'var(--error-color)' : 'var(--primary-color)';
+            if (!isError && msg.includes("恭喜")) {} else {
+                setTimeout(() => { el.textContent = ''; }, 2000);
+            }
+        }
+
+        function clearStatus() {
+            document.getElementById('status-msg').textContent = '';
+        }
+    </script>
+</body>
+</html>
