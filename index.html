@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Play Sudoku Like a Pro</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%233182ce'/%3E%3Cpath d='M11 6v20M21 6v20M6 11h20M6 21h20' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
     <style>
@@ -23,10 +23,10 @@
             --candidate-color: #718096;
             
             /* 难度颜色 */
-            --easy-color: #48bb78;   /* 开心绿 */
-            --medium-color: #4299e1; /* 平静蓝 */
-            --hard-color: #ed8936;   /* 困惑橙 */
-            --expert-color: #f56565; /* 抓狂红 */
+            --easy-color: #48bb78;
+            --medium-color: #4299e1;
+            --hard-color: #ed8936;
+            --expert-color: #f56565;
         }
 
         body {
@@ -73,20 +73,26 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 10px 5px;
+            padding: 10px 4px; /* 减小左右内边距以适应手机 */
             background: white;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s;
             box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            min-width: 0; /* 防止Flex子元素溢出 */
         }
 
         .diff-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         .diff-btn:active { transform: scale(0.98); }
         
-        .diff-icon { width: 28px; height: 28px; margin-bottom: 4px; }
-        .diff-text { font-size: 12px; font-weight: 600; color: #718096; }
+        .diff-icon { width: 28px; height: 28px; margin-bottom: 4px; flex-shrink: 0; }
+        .diff-text { 
+            font-size: 12px; 
+            font-weight: 600; 
+            color: #718096; 
+            white-space: nowrap; /* 防止文字换行 */
+        }
         
         .diff-btn.active { border-color: var(--primary-color); background-color: #ebf8ff; }
         
@@ -126,6 +132,7 @@
             user-select: none;
             position: relative;
             transition: background-color 0.05s;
+            padding: 0;
         }
 
         .cell.border-bottom { border-bottom: 2px solid var(--line-color); }
@@ -163,36 +170,39 @@
         .right-panel {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 15px;
         }
 
         .numpad {
             display: grid;
-            grid-template-columns: repeat(3, 64px);
-            grid-template-rows: repeat(4, 64px);
+            grid-template-columns: repeat(3, 1fr); /* 保持3列等宽 */
             gap: 10px;
         }
         
         .num-btn {
             padding: 0;
-            font-size: 26px;
+            height: 50px; /* 统一高度 */
+            font-size: 24px;
             background: white;
             border: 1px solid #e2e8f0;
-            border-radius: 12px;
+            border-radius: 10px;
             display: flex;
             justify-content: center;
             align-items: center;
             font-weight: 600;
             color: var(--text-color);
-            box-shadow: 0 4px 0 #cbd5e0;
+            box-shadow: 0 3px 0 #cbd5e0;
             transition: all 0.1s;
             cursor: pointer;
             outline: none;
         }
 
-        .num-btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 0 0 #cbd5e0; }
+        .num-btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 0 0 #cbd5e0; }
         .num-btn.clear, .num-btn.undo { background-color: #edf2f7; font-size: 16px; color: #4a5568; font-weight: normal; }
+        
+        /* 清除按钮跨越2列，撤销按钮跨越1列，正好填满3列的宽度 */
         .num-btn.clear { grid-column: span 2; }
+        .num-btn.undo { grid-column: span 1; }
         
         .num-btn:disabled.completed {
             background-color: transparent;
@@ -203,8 +213,8 @@
         }
         
         .completed-svg {
-            width: 32px;
-            height: 32px;
+            width: 28px;
+            height: 28px;
             fill: #48bb78;
             animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
@@ -276,31 +286,52 @@
             text-align: center;
         }
 
-        /* --- 响应式 --- */
+        /* --- 响应式调整 (针对手机端) --- */
         @media (max-width: 850px) {
-            .game-container { flex-direction: column; align-items: center; gap: 20px; }
+            .game-container { 
+                flex-direction: column; 
+                align-items: center; 
+                gap: 20px; 
+                width: 100%;
+            }
+
+            /* 数独盘自适应 */
             .game-board {
-                grid-template-columns: repeat(9, 10vw);
-                grid-template-rows: repeat(9, 10vw);
+                grid-template-columns: repeat(9, 10.5vw); /* 稍微放大格子 */
+                grid-template-rows: repeat(9, 10.5vw);
+                max-width: 94.5vw; /* 防止溢出 */
+                box-shadow: 0 5px 10px rgba(0,0,0,0.05);
             }
             .cell { font-size: 18px; }
             .candidate-num { font-size: 8px; }
             
-            .right-panel { width: 90vw; max-width: 400px; }
-            .numpad {
-                grid-template-columns: repeat(5, 1fr);
-                grid-template-rows: 50px 50px;
-                width: 100%;
-                gap: 8px;
+            /* 键盘区域自适应 */
+            .right-panel { 
+                width: 94.5vw; /* 与数独盘同宽 */
+                max-width: none;
             }
-            .num-btn { font-size: 20px; border-radius: 8px; }
-            .num-btn.clear { grid-column: span 2; }
-            .num-btn.undo { grid-column: span 1; }
-            .completed-svg { width: 24px; height: 24px; }
+
+            .numpad {
+                /* 强制3列布局，1-9占据前3行 */
+                grid-template-columns: repeat(3, 1fr); 
+                /* 自动行高 */
+                gap: 8px;
+                width: 100%;
+            }
             
-            .top-bar { width: 90%; }
-            .diff-text { display: none; }
-            .difficulty-selector { gap: 5px; }
+            .num-btn { 
+                height: 55px; /* 手机上按钮稍微高一点更易点 */
+                font-size: 22px; 
+                border-radius: 12px;
+            }
+
+            /* 顶部栏宽度 */
+            .top-bar { width: 94.5vw; max-width: none; margin-bottom: 15px; }
+            .difficulty-selector { gap: 8px; }
+            
+            /* 确保文字显示 */
+            .diff-text { display: block; font-size: 11px; }
+            .diff-icon { width: 24px; height: 24px; }
         }
     </style>
 </head>
@@ -457,17 +488,6 @@
             return true;
         }
 
-        function isSafe(board, row, col, num) {
-            for (let x = 9; x < 9; x++) if (board[row * 9 + x] === num) return false;
-            for (let x = 0; x < 9; x++) if (board[x * 9 + col] === num) return false;
-            let startRow = row - row % 3, startCol = col - col % 3;
-            for (let i = 0; i < 3; i++)
-                for (let j = 0; j < 3; j++)
-                    if (board[(startRow + i) * 9 + (startCol + j)] === num) return false;
-            return true;
-        }
-        
-        // 修复 isSafe 函数逻辑错误 (第一行循环变量 x 初始化错误)
         function isSafe(board, row, col, num) {
             for (let x = 0; x < 9; x++) if (board[row * 9 + x] === num) return false;
             for (let x = 0; x < 9; x++) if (board[x * 9 + col] === num) return false;
