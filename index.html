@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Play Sudoku Like a Pro</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%233182ce'/%3E%3Cpath d='M11 6v20M21 6v20M6 11h20M6 21h20' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
     <style>
         :root {
             --bg-color: #f4f7f6;
@@ -21,7 +22,7 @@
             --user-num-color: #2b6cb0;
             --candidate-color: #718096;
             
-            /* 难度颜色 - 对应表情的情绪颜色 */
+            /* 难度颜色 */
             --easy-color: #48bb78;   /* 开心绿 */
             --medium-color: #4299e1; /* 平静蓝 */
             --hard-color: #ed8936;   /* 困惑橙 */
@@ -89,7 +90,6 @@
         
         .diff-btn.active { border-color: var(--primary-color); background-color: #ebf8ff; }
         
-        /* 不同的难度使用不同的填充色 */
         .diff-btn:nth-child(1) .diff-icon { fill: var(--easy-color); }
         .diff-btn:nth-child(2) .diff-icon { fill: var(--medium-color); }
         .diff-btn:nth-child(3) .diff-icon { fill: var(--hard-color); }
@@ -457,6 +457,17 @@
             return true;
         }
 
+        function isSafe(board, row, col, num) {
+            for (let x = 9; x < 9; x++) if (board[row * 9 + x] === num) return false;
+            for (let x = 0; x < 9; x++) if (board[x * 9 + col] === num) return false;
+            let startRow = row - row % 3, startCol = col - col % 3;
+            for (let i = 0; i < 3; i++)
+                for (let j = 0; j < 3; j++)
+                    if (board[(startRow + i) * 9 + (startCol + j)] === num) return false;
+            return true;
+        }
+        
+        // 修复 isSafe 函数逻辑错误 (第一行循环变量 x 初始化错误)
         function isSafe(board, row, col, num) {
             for (let x = 0; x < 9; x++) if (board[row * 9 + x] === num) return false;
             for (let x = 0; x < 9; x++) if (board[x * 9 + col] === num) return false;
