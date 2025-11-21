@@ -27,6 +27,9 @@
             --medium-color: #4299e1;
             --hard-color: #ed8936;
             --expert-color: #f56565;
+            
+            /* Pro 标签金 */
+            --pro-gold: #D69E2E;
         }
 
         body {
@@ -44,11 +47,16 @@
             box-sizing: border-box;
         }
 
-        h1 { 
-            margin: 0 0 20px 0; 
-            font-weight: 300;
-            letter-spacing: 2px;
-            color: #4a5568;
+        /* Logo 容器 */
+        .logo-container {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .logo-svg {
+            height: 50px;
+            width: auto;
         }
 
         /* --- 顶部控制区 --- */
@@ -73,14 +81,14 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 10px 4px; /* 减小左右内边距以适应手机 */
+            padding: 10px 4px;
             background: white;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s;
             box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            min-width: 0; /* 防止Flex子元素溢出 */
+            min-width: 0;
         }
 
         .diff-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
@@ -91,7 +99,7 @@
             font-size: 12px; 
             font-weight: 600; 
             color: #718096; 
-            white-space: nowrap; /* 防止文字换行 */
+            white-space: nowrap;
         }
         
         .diff-btn.active { border-color: var(--primary-color); background-color: #ebf8ff; }
@@ -104,7 +112,8 @@
         /* --- 游戏主容器 --- */
         .game-container {
             display: flex;
-            gap: 30px;
+            /* 修改：减少了盘面和键盘之间的间距 */
+            gap: 20px; 
             align-items: flex-start;
             margin-bottom: 20px;
         }
@@ -171,17 +180,20 @@
             display: flex;
             flex-direction: column;
             gap: 15px;
+            /* 修改：桌面端固定宽度，让按钮变宽 */
+            width: 280px; 
         }
 
         .numpad {
             display: grid;
-            grid-template-columns: repeat(3, 1fr); /* 保持3列等宽 */
+            /* 修改：使用 1fr 填满父容器宽度 */
+            grid-template-columns: repeat(3, 1fr);
             gap: 10px;
         }
         
         .num-btn {
             padding: 0;
-            height: 50px; /* 统一高度 */
+            height: 55px; /* 修改：稍微加高一点 */
             font-size: 24px;
             background: white;
             border: 1px solid #e2e8f0;
@@ -200,7 +212,6 @@
         .num-btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 0 0 #cbd5e0; }
         .num-btn.clear, .num-btn.undo { background-color: #edf2f7; font-size: 16px; color: #4a5568; font-weight: normal; }
         
-        /* 清除按钮跨越2列，撤销按钮跨越1列，正好填满3列的宽度 */
         .num-btn.clear { grid-column: span 2; }
         .num-btn.undo { grid-column: span 1; }
         
@@ -295,41 +306,34 @@
                 width: 100%;
             }
 
-            /* 数独盘自适应 */
             .game-board {
-                grid-template-columns: repeat(9, 10.5vw); /* 稍微放大格子 */
+                grid-template-columns: repeat(9, 10.5vw);
                 grid-template-rows: repeat(9, 10.5vw);
-                max-width: 94.5vw; /* 防止溢出 */
+                max-width: 94.5vw;
                 box-shadow: 0 5px 10px rgba(0,0,0,0.05);
             }
             .cell { font-size: 18px; }
             .candidate-num { font-size: 8px; }
             
-            /* 键盘区域自适应 */
             .right-panel { 
-                width: 94.5vw; /* 与数独盘同宽 */
+                width: 94.5vw;
                 max-width: none;
             }
 
             .numpad {
-                /* 强制3列布局，1-9占据前3行 */
-                grid-template-columns: repeat(3, 1fr); 
-                /* 自动行高 */
+                grid-template-columns: repeat(3, 1fr);
                 gap: 8px;
                 width: 100%;
             }
             
             .num-btn { 
-                height: 55px; /* 手机上按钮稍微高一点更易点 */
+                height: 55px;
                 font-size: 22px; 
                 border-radius: 12px;
             }
 
-            /* 顶部栏宽度 */
             .top-bar { width: 94.5vw; max-width: none; margin-bottom: 15px; }
             .difficulty-selector { gap: 8px; }
-            
-            /* 确保文字显示 */
             .diff-text { display: block; font-size: 11px; }
             .diff-icon { width: 24px; height: 24px; }
         }
@@ -337,7 +341,16 @@
 </head>
 <body>
 
-    <h1>SUDOKU</h1>
+    <div class="logo-container">
+        <svg class="logo-svg" viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
+            <text x="0" y="40" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-weight="400" font-size="42" fill="#2d3748" letter-spacing="1">Sudoku</text>
+            
+            <g transform="translate(155, 6)">
+                <rect x="0" y="0" width="38" height="20" rx="4" fill="#D69E2E" />
+                <text x="19" y="14" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-weight="bold" font-size="11" fill="white" text-anchor="middle">PRO</text>
+            </g>
+        </svg>
+    </div>
 
     <div class="top-bar">
         <div class="difficulty-selector">
